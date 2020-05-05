@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Lightpainter2 ☰ ☰ ☰</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="/favicon.png"/>
+  <link href="/style.css" rel="stylesheet" type="text/css" />
+  <script src="/functions.js" type="application/javascript"></script>
+  <script type="application/javascript">
+  var imageNum;
+  function getcImage() {
+
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        imageNum = Number(this.responseText); // do we need to interpolate the string?? Number('123')
+        document.getElementById("cImage").addEventListener( 'load', function(){
+          dist = (this.offsetHeight / 2) + 72 ;
+          this.style.transform = "rotate(90deg) translateY(-"+ dist + "px)";
+        }, false );
+        document.getElementById("cImage").src = '/getImage?i='+imageNum;
+      }
+    };
+    xhttp.open("GET", "/getImageNum", true);
+    xhttp.send();
+  }
+
+  function startShow() {
+  	var xhttp = new XMLHttpRequest();
+  	xhttp.onreadystatechange = function() {
+  		if (this.readyState == 4 && this.status == 200) {
+  			document.getElementById("response").innerHTML = this.responseText;
+  			fadeOut(document.getElementById("response"));
+  		}
+  	};
+  	xhttp.open("GET", "/startShow", true);
+  	xhttp.send();
+  }
+
+  window.onload = function() {
+    getcImage();
+  }
+
+  </script>
+
+</head>
+
+<body>
+	<h1>Lightpainter2</h1>
+  <br>
+	<div id="imagebox" style="height:146px;">
+    <a href="/image">
+      <img id="cImage" class="loader" style="transform-origin: top left;" />
+    </a>
+	</div>
+  <div id="chooser">
+    <a href="#" class="block" style="background-color: #0cc;" onclick="startShow();return false;">Start</a>
+    <br />
+    <a href="/settings" class="block" style="background-color: #004d4d; border: 1px solid black">⚙ Settings</a>
+  </div>
+  <div id="response"></div>
+
+</body>
+
+</html>

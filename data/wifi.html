@@ -1,0 +1,155 @@
+<head>
+	<title>Lightpainter2 ☰ ☰ ☰</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="/favicon.png"/>
+  <link href="/style.css" rel="stylesheet" type="text/css" />
+  <style type="text/css">
+    input { font-family: Arial, Helvetica, Sans-Serif; font-size: 110%; background-color: rgb(66,66,66); color: #fff; border: none; width: 80%; max-width: 30em; padding: 4px 10px; margin: 4px 0; box-sizing: border-box; border-radius: 4px;}
+  </style>
+  <script src="/functions.js" type="application/javascript"></script>
+  <script type="application/javascript">
+
+  // get wifi data from the server
+  function populateData() {
+    var el = document.getElementById("response");
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        var obj = JSON.parse(this.responseText);
+        el.style.opacity = 0;
+        el.style.zIndex = -1;
+        parseWifiData(obj); // don't parse until we have object
+      }
+    };
+    xhttp.open("GET", "/getWifi", true);
+    xhttp.send();
+  }
+
+  // parse the json data into html
+  function parseWifiData(obj){
+    var stateText = (obj.type == 0) ? "You are connected to Lightpainter2 as an AP" : "You are connected to Lightpainter2 through a WiFi network";
+    document.getElementById("connectionState").innerHTML = stateText;
+
+    var elem = document.createElement("tr");
+    elem.innerHTML = "<td>" + obj.ap_ssid + "</td><td>" + obj.wan_ssid + "</td>";
+    document.getElementById("networkInfo").appendChild(elem);
+    elem = document.createElement("tr");
+    elem.innerHTML = "<td>" + obj.ap_ip + "</td><td>" + obj.wan_ip + "</td>";
+    document.getElementById("networkInfo").appendChild(elem);
+
+    // array, we have to parse it.
+    if (!obj.networks.length) {
+      elem = document.createElement("tr");
+      elem.innerHTML = '<td colspan="3">No networks found!</td>';
+      document.getElementById("availableNetworks").appendChild(elem);
+
+    } else {
+      var i;
+      for (i=0; i < obj.networks.length; i++) {
+        var enc = (obj.networks[i].enc == 0 ) ? "" : "✔";
+        elem = document.createElement("tr");
+        elem.innerHTML = "<td>" + obj.networks[i].name + "</td><td>" + enc + "</td><td>" + obj.networks[i].rssi+ "</td>";
+        document.getElementById("availableNetworks").appendChild(elem);
+      }
+    }
+  }
+
+  // Sends the form via xhr
+  function sendData() {
+    var XHR = new XMLHttpRequest();
+    var form = document.getElementById("myForm");
+    // Bind the FormData object and the form element
+    var FD = new FormData(form);
+    // Define what happens on successful data submission
+    XHR.addEventListener("load", function(event) {
+      document.getElementById("response").innerHTML = "Data sent correctly!";
+      fadeOut(document.getElementById("response"));
+      // reload the page????
+    });
+    // Define what happens in case of error
+    XHR.addEventListener("error", function(event) {
+      document.getElementById("response").innerHTML = "Couldn't send connection data!";
+      document.getElementById("response").style.backgroundColor = "red";
+      fadeOut(document.getElementById("response"));
+      document.getElementById("response").style.backgroundColor = "green";
+    });
+    // Set up our request
+    XHR.open("POST", "/wifisave");
+    // The data sent is what the user provided in the form
+    XHR.send(FD);
+  }
+
+  // refresh the data
+  function refreshData() {
+    var el = document.getElementById("response");
+    el.style.zIndex = 1;
+    el.style.opacity = 1;
+    el.innerHTML = '<div class="lds-ring"><div></div><div></div><div></div><div></div></div>';
+    // delete all the data in the tables
+    document.getElementById("connectionState").innerHTML = "";
+    var myNode = document.getElementById("networkInfo");
+    while (myNode.rows.length > 1) {
+      myNode.deleteRow(1);
+    }
+    myNode = document.getElementById("availableNetworks");
+    while (myNode.rows.length > 1) {
+      myNode.deleteRow(1);
+    }
+    // pull new data
+    populateData();
+
+  }
+
+  window.addEventListener("load", function () {
+
+    // Access the form element...
+    var form = document.getElementById("myForm");
+    // ...and take over its submit event.
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      sendData();
+    });
+
+    populateData();
+
+  });
+
+  </script>
+</head>
+
+<body>
+	<h1>Lightpainter2</h1>
+  <h2>Wifi configuration</h2>
+  <p id="connectionState"></p>
+  <br />
+
+  <table id="networkInfo">
+    <tr class="header"><th>SoftAP config</th><th>WLAN config</th></tr>
+  </table><br />
+
+  <form id="myForm" method='POST' action='/wifisave'>
+    <label for='n'>Connect to network</label>
+    <input id='n' type='text' placeholder='network' name='n'/><br />
+    <input type='password' placeholder='password' name='p'/><br />
+    <input type='submit' class="block" style="background-color: #0cc;" value='Connect/Disconnect'/>
+  </form><br />
+
+  <p>Available networks (<a href="#" onclick="refreshData(); return false">refresh</a>)</p>
+  <table id="availableNetworks">
+    <tr class="header">
+      <th>name</th>
+      <th><img class="svg" src="/lock.svg" style="width:24px;height:24px" /></th>
+      <th><img class="svg" src="/signal-cellular-2.svg" style="width:24px;height:24px" /></th>
+    </tr>
+  </table>
+
+  <div id="response"><div class="lds-ring"><div></div><div></div><div></div><div></div></div></div>
+
+  <div id="footer">
+    <a href="/start">back to start</a>
+  </div>
+
+</body>
+
+</html>

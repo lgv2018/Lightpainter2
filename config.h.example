@@ -1,0 +1,7 @@
+// Sensitive config options for Lightpainter2
+
+// SoftAP password
+const char *softAP_password = "12345678";
+
+// OTA update password
+#define  OTApassword "KeepSafe"

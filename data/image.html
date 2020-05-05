@@ -1,0 +1,160 @@
+<head>
+	<title>Lightpainter2 ☰ ☰ ☰</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="/favicon.png"/>
+  <link href="/style.css" rel="stylesheet" type="text/css" />
+  <style type="text/css">
+  img.loader {transform-origin: top left;}
+  a.loader {height:146px; overflow: hidden;}
+  </style>
+  <script src="/functions.js" type="application/javascript"></script>
+  <script type="application/javascript">
+
+  // globals
+  var imageNum;
+
+  // preload image
+  var swirly = new Image();
+  swirly.src = "/loading.gif";
+
+ // send image from form
+ function sendFile() {
+    var form = document.forms.namedItem("fileuploader");
+    var oOutput = document.getElementById('response');
+    oData = new FormData(form);
+
+    var xhr = new XMLHttpRequest();
+    xhr.upload.addEventListener("progress", updateProgress);
+    xhr.upload.addEventListener("load", transferComplete);
+    xhr.upload.addEventListener("error", transferFailed);
+    xhr.upload.addEventListener("abort", transferCanceled);
+    oOutput.style.opacity = 1;
+    oOutput.style.zIndex = 1;
+    xhr.open("POST", "/iupload", true);
+    xhr.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        // success!!
+        oOutput.innerHTML = "File uploaded successfully";
+        fadeOut(oOutput);
+        console.log("Success!!!");  // check that this is called last! div doesn't fade out
+      }
+    };
+
+    xhr.send(oData);
+  }
+
+  // progress on transfers
+  function updateProgress (oEvent) {
+    var oOutput = document.getElementById('response');
+    if (oEvent.lengthComputable) {
+      var percentComplete = oEvent.loaded / oEvent.total * 100;
+      oOutput.innerHTML = "Progress: " + percentComplete + '%';
+      console.log(percentComplete);
+    } else {
+      // Unable to compute progress information since the total size is unknown
+    }
+  }
+
+  // status handlers
+  function transferComplete(evt) {
+    console.log("The transfer is complete.");
+  }
+
+  function transferFailed(evt) {
+    console.log("An error occurred while transferring the file.");
+    var oOutput = document.getElementById('response');
+    oOutput.style.backgroundColor = "red";
+    oOutput.innerHTML = "Error uploading file!";
+  }
+
+  function transferCanceled(evt) {
+    console.log("The transfer has been canceled by the user.");
+  }
+
+  // get the number of images
+  function getMax() {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        imageNum = Number(this.responseText);
+        populateImages();
+      }
+    };
+    xhttp.open("GET", "/getImageTot", true);
+    xhttp.send();
+  }
+
+  // create the images
+  function populateImages() {
+    var i;
+    var dist;
+    for (i = 0; i < imageNum; i++) {
+      var elem = document.createElement("a");
+      elem.setAttribute("class", "loader");
+      elem.setAttribute("href", "#");
+      elem.setAttribute("onclick", 'setImage('+i+');return false;');
+      var image = document.createElement("img");
+      image.setAttribute("class", "loader");
+      image.addEventListener( 'load', function(){
+        dist = (this.offsetHeight / 2) + 72 ;
+        this.style.transform = "rotate(90deg) translateY(-"+ dist + "px)";
+      }, false );
+      image.src = '/getImage?i='+i;
+      elem.appendChild(image);
+      document.getElementById("imagecontainer").appendChild(elem);
+    }
+  }
+
+  // set the selected image
+  function setImage(i) {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        // if successful, go back to start
+        window.location.href = "/start";
+      }
+    };
+    xhttp.open("POST", "/setImage?num=" + i, true);
+    xhttp.send();
+  }
+
+  // onload tasks
+  window.onload = function() {
+    // get the max image and populate the images
+    getMax();
+
+    // set event listner to activate hidden form file element
+    const fileSelect = document.getElementById("fileSelect"),
+      fileElem = document.getElementById("fileElem");
+    fileSelect.addEventListener("click", function (e) {
+      if (fileElem) {
+        fileElem.click();
+      }
+    }, false);
+  }
+
+  </script>
+</head>
+
+<body>
+	<h1>Lightpainter2</h1>
+  <p>Images on card</p>
+	<div id="imagecontainer">
+	</div>
+  <div id="chooser">
+    <form name="fileuploader" id="myForm" method='POST' enctype="multipart/form-data">
+      <input name="fileElem" type="file" id="fileElem" multiple accept="image/bmp" style="display:none" onchange="sendFile()">
+      <a href="#" id="fileSelect" class="block" style="background-color: #0cc;">Upload</a>
+    </form>
+  </div>
+
+  <div id="response"></div>
+
+  <div id="footer">
+    <a href="/start">back to start</a>
+  </div>
+
+</body>
+
+</html>

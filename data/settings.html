@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<title>Lightpainter2 ☰ ☰ ☰</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="/favicon.png"/>
+  <link href="/style.css" rel="stylesheet" type="text/css" />
+  <script src="/functions.js" type="application/javascript"></script>
+  <script type="application/javascript">
+
+  function pushData(slider, slideAmount) {
+  	var xhttp = new XMLHttpRequest();
+  	xhttp.onreadystatechange = function() {
+  		if (this.readyState == 4 && this.status == 200) {
+  			document.getElementById("response").innerHTML = this.responseText;
+  			fadeOut(document.getElementById("response"));
+  		}
+  	};
+  	xhttp.open("POST", "/change?" + slider + "=" + slideAmount, true);
+  	xhttp.send();
+  }
+
+  function saveSettings() {
+  	var xhttp = new XMLHttpRequest();
+  	xhttp.onreadystatechange = function() {
+  		if (this.readyState == 4 && this.status == 200) {
+  			document.getElementById("response").innerHTML = this.responseText;
+  			fadeOut(document.getElementById("response"));
+  		}
+  	};
+  	xhttp.open("POST", "/save", true);
+  	xhttp.send();
+  }
+
+  function getData() {
+    var xhttp = new XMLHttpRequest();
+  	xhttp.onreadystatechange = function() {
+  		if (this.readyState == 4 && this.status == 200) {
+  			var obj = JSON.parse(this.responseText);
+        document.getElementById('brightness').value = obj.bri;
+        document.getElementById('speed').value = obj.spe;
+        document.getElementById('delay').value = obj.del;
+  		}
+  	};
+  	xhttp.open("GET", "/getSettings", true);
+  	xhttp.send();
+  }
+
+  window.onload = function() {
+
+    var brightness = document.getElementById('brightness');
+    brightness.onchange = function() {
+    	pushData("bri", this.value);
+    };
+    var speed = document.getElementById('speed');
+    speed.onchange = function() {
+    	pushData("spe", this.value);
+    };
+    var delay = document.getElementById('delay');
+    delay.onchange = function() {
+    	pushData("del", this.value);
+    };
+
+    getData();
+
+  }
+  </script>
+</head>
+
+<body>
+  <h1>Lightpainter2</h1>
+  <a class="button" href="/wifi">Wifi / network</a>
+	<div class="slidecontainer">
+    <label for="brightness">Brightness</label>
+    <input type="range" min="0" max="255" value="0" class="slider white" id="brightness">
+    <label for="speed">Speed</label>
+		<input type="range" min="0" max="255" value="0" class="slider cyan" id="speed">
+    <label for="delay">Delay</label>
+		<input type="range" min="0" max="255" value="0" class="slider cyan" id="delay">
+    <a class="button" href="#" onclick="saveSettings(); return false;">Save settings</a>
+  </div>
+
+  <div id="response"></div>
+
+  <div id="footer">
+    <a href="/start">back to start</a>
+  </div>
+
+</body>
+
+</html>

@@ -1,0 +1,302 @@
+<head>
+  <!-- IMPORTANT:::: ADD BACK SLASH (/) TO FILE PATHS!!!!!!!!!!!!!!!!!!!!!!! -->
+	<title>Lightpainter2 tools</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link href="style.css" rel="stylesheet" type="text/css" />
+  <style type="text/css">
+    h1 { border: 0; font: 0/0 a; text-shadow: none; color: transparent; background: url(title.png); width: 229px; height: 47px; text-align: center; margin: auto; background-repeat: no-repeat;
+  background-size: 100% 100%;}
+    #menu {display: grid; grid-template-columns: repeat(4, 1fr); width: 80%; margin: 1em auto; grid-gap: 0.3em; }
+    .menuButton { display: block; background-color: #0cc; color: #fff; height:2em; text-decoration:none; font-size:1.2em;line-height: 2em;}
+    .menuButton:hover, .active {background-color: #077;box-sizing: border-box;}
+    #bladeHolder {min-height: 20em; width:80%; text-align:center; position:relative; margin: auto; }
+    .appBlade { border-radius: 10px; width: 100%; margin: auto; position: absolute; top: 0; opacity: 0; z-index:-1; background-color: #077; min-height:10em;padding:1em 2em;box-sizing: border-box;}
+    /* inherited styles */
+    input { font-family: Arial, Helvetica, Sans-Serif; font-size: 110%; background-color: rgb(66,66,66); color: #fff; border: none; width: 80%; max-width: 30em; padding: 4px 10px; margin: 4px 0; box-sizing: border-box; border-radius: 4px;}
+    tr:nth-child(even) {background-color: #555;}
+    .red { background: #cc0000; }
+    .green { background: #00cc00; }
+    .blue { background: #0000cc; }
+    .smallButton {display: inline-block; background-color: #0cc; color: #fff; height:2em; text-decoration:none; font-size:1.2em;line-height: 2em; width: 8em; margin: 1em auto; }
+    .alert { border: solid 2px #fff; background-color: #077; border-radius: 10px; padding: 1em; position: fixed; left: 50%; top: 50%; z-index: -1; opacity: 0; height: 6em; margin-top: -3em; width: 20em; margin-left: -10em;
+  }
+  </style>
+  <script src="functions.js" type="application/javascript"></script>
+  <script type="application/javascript">
+
+  // activade a blade of the interface
+  function activate(link,blade){
+
+    var oldlink = document.getElementsByClassName("active");
+    if (oldlink[0]) {oldlink[0].classList.remove("active");}
+    link.className += " active";
+    // clear the opacity of the other blades
+    var el = document.getElementById(blade);
+    var blades = document.getElementsByClassName("appBlade");
+    for (var i = 0; i < blades.length; i++) {
+      blades[i].style.opacity = 0;
+      blades[i].style.zIndex = -1;
+    }
+    el.style.opacity = 1;
+    el.style.zIndex = 1;
+
+    // then init the blade elements...
+  }
+
+  // Control the LED strip
+  function setStrip(state) {
+    var red = 0;
+    var gre = 0;
+    var blu = 0;
+    if (state == true){
+      red = document.getElementById("red").value;
+      gre = document.getElementById("gre").value;
+      blu = document.getElementById("blu").value;
+    }
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("ledStatus").innerHTML = this.responseText;
+      }
+    };
+    xhttp.open("POST", "/tools?f=leds&r=" + red + "&g=" + gre + "&b=" + blu, true);
+    xhttp.send();
+  }
+
+  // get file directory
+  // returns json
+  function refreshFileList(){
+    var el = document.getElementById("response");
+    el.innerHTML = '<div class="lds-ring"><div></div><div></div><div></div><div></div></div>';
+    el.style.zIndex = 1;
+    el.style.opacity = 1;
+    // delete all the data in the tables
+    var myNode = document.getElementById("fileList");
+    while (myNode.rows.length > 1) {
+      myNode.deleteRow(1);
+    }
+    // pull new data
+    getFileData();
+
+  }
+
+  // get file list data from the server
+  function getFileData() {
+    var el = document.getElementById("response");
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        var obj = JSON.parse(this.responseText);
+        el.style.opacity = 0;
+        el.style.zIndex = -1;
+        parseFileData(obj); // don't parse until we have object
+      }
+    };
+    xhttp.open("GET", "/tools?f=dir", true);
+    xhttp.send();
+  }
+
+  // place the json object received
+  function parseFileData(obj){
+    if (!obj.length) {
+      elem = document.createElement("tr");
+      elem.innerHTML = '<td colspan="4">No files found!</td>';
+      document.getElementById("fileList").appendChild(elem);
+    } else {
+      var i;
+      for (i=0; i < obj.length; i++) {
+        elem = document.createElement("tr");
+        elem.innerHTML = "<td>" + obj[i].name + "</td><td>" + obj[i].fileSize + '</td>\
+        <td><a download="'+obj[i].name+'" href="/tools?f=dwn&file=' + obj[i].name + '"><img class="svg" alt="download" src="download.svg" style="width:24px;height:24px" /></a></td>\
+        <td><a href="#" onclick="preDeleteFile(\'' + obj[i].name + '\'); return false;"><img class="svg" alt="delete" src="delete-forever.svg" style="width:24px;height:24px" /></a></td>';
+        document.getElementById("fileList").appendChild(elem);
+      }
+    }
+  }
+
+  // get confirmation for deleting file
+  function preDeleteFile(fileName) {
+    elem = document.getElementsByClassName("alert")[0];
+    elem.style.opacity = 1;
+    elem.style.zIndex = 100;
+    elem.innerHTML = "Are you sure you want to delete <br><strong>" + fileName + "?</strong><br />";
+    elem.innerHTML += '<a href="#" style="color: #ff6d6d;" class="smallButton" onclick="deleteFile(\''+fileName+'\'); return false;">Delete</a>\
+     <a href="#"class="smallButton" onclick="hideBox(\'alert\'); return false;">Cancel</a>';
+  }
+
+  function hideBox(elem) {
+    var box = document.getElementsByClassName(elem)[0];
+    box.style.opacity = 0;
+    box.style.zIndex = -1;
+    box.innerHTML="";
+  }
+
+  // delete file on server
+  function deleteFile(fileName) {
+    document.getElementsByClassName("alert")[0].style.opacity = 0;
+    document.getElementsByClassName("alert")[0].style.zIndex = -1;
+    var el = document.getElementById("response");
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        el.innerHTML = this.repsonseText;
+        fadeOut(el);
+        // refresh fileList
+        refreshFileList();
+      }
+    };
+    xhttp.open("GET", "/tools?f=del&file="+fileName, true); // should be POST but I can live with it
+    xhttp.send();
+  }
+
+  // get diagnostic info
+  function loadDiagnostics() {
+    var el = document.getElementById("diagnostics_results");
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function() {
+      if (this.readyState == 4 && this.status == 200) {
+        el.innerHTML = this.repsonseText;
+      }
+    };
+    xhttp.open("GET", "/tools?f=diag", true); // should be POST but I can live with it
+    xhttp.send();
+  }
+
+  // send image from form
+  function sendFile() {
+     var form = document.forms.namedItem("fileuploader");
+     var oOutput = document.getElementById('response');
+     oData = new FormData(form);
+
+     var xhr = new XMLHttpRequest();
+     xhr.upload.addEventListener("progress", updateProgress);
+     xhr.upload.addEventListener("load", transferComplete);
+     xhr.upload.addEventListener("error", transferFailed);
+     xhr.upload.addEventListener("abort", transferCanceled);
+     oOutput.style.opacity = 1;
+     oOutput.style.zIndex = 1;
+     xhr.open("POST", "/iupload", true);
+     xhr.onreadystatechange = function() {
+       if (this.readyState == 4 && this.status == 200) {
+         // success!!
+         oOutput.innerHTML = "File uploaded successfully";
+         fadeOut(oOutput);
+         console.log("Success!!!");  // check that this is called last! div doesn't fade out
+       }
+     };
+
+     xhr.send(oData);
+   }
+
+   // progress on transfers
+   function updateProgress (oEvent) {
+     var oOutput = document.getElementById('response');
+     if (oEvent.lengthComputable) {
+       var percentComplete = oEvent.loaded / oEvent.total * 100;
+       oOutput.innerHTML = "Progress: " + percentComplete + '%';
+       console.log(percentComplete);
+     } else {
+       // Unable to compute progress information since the total size is unknown
+     }
+   }
+
+   // status handlers
+   function transferComplete(evt) {
+     console.log("The transfer is complete.");
+   }
+
+   function transferFailed(evt) {
+     console.log("An error occurred while transferring the file.");
+     var oOutput = document.getElementById('response');
+     oOutput.style.backgroundColor = "red";
+     oOutput.innerHTML = "Error uploading file!";
+   }
+
+   function transferCanceled(evt) {
+     console.log("The transfer has been canceled by the user.");
+   }
+
+  // on load
+  window.addEventListener("load", function () {
+
+    // set event listner to activate hidden form file element
+    const fileSelect = document.getElementById("fileSelect"),
+      fileElem = document.getElementById("fileElem");
+    fileSelect.addEventListener("click", function (e) {
+      if (fileElem) {
+        fileElem.click();
+      }
+    }, false);
+
+  });
+
+  </script>
+</head>
+
+<body>
+	<h1>Lightpainter2</h1>
+  <h2>Tools and diagnostics</h2>
+  <div id="menu"> <!-- this should be an horizontal menu. clicking makes the divs bellow active -->
+    <a class="menuButton" onclick="activate(this,'FileManager'); refreshFileList(); return false;" href="#">File manager</a>
+    <a class="menuButton" onclick="activate(this,'Upload'); return false;" href="#">Upload</a>
+    <a class="menuButton" onclick="activate(this,'LED_tests'); return false;" href="#">LED tests</a>
+    <a class="menuButton" onclick="activate(this,'Diagnostics'); return false;" href="#">Diagnostics</a>
+  </div>
+  <div id="bladeHolder">
+    <div class="appBlade" id="intro" style="z-index: 1; opacity:1;">
+      Use the tabs above to load each component of the tools
+    </div>
+    <div class="appBlade" id="FileManager">
+      (<a href="#" onclick="refreshFileList(); return false">refresh</a>)
+      <table id="fileList" style="background-color: #4b4b4b; max-width: 100%;">
+        <tr class="header">
+          <th>name</th>
+          <th>size</th>
+          <th>download</th>
+          <th>delete</th>
+        </tr>
+      </table>
+      <div class="alert"></div>
+    </div>
+
+
+    <div class="appBlade" id="Upload">
+      <p>Press the button to select a file</p>
+      <form name="fileuploader" id="myForm" method='POST' enctype="multipart/form-data" style="width:60%; margin:auto;">
+        <input name="fileElem" type="file" id="fileElem" multiple accept="image/bmp" style="display:none" onchange="sendFile()">
+        <a href="#" id="fileSelect" class="block" style="background-color: #0cc;">Upload</a>
+      </form>
+    </div>
+
+
+    <div class="appBlade" id="LED_tests">
+      <div class="slidecontainer">
+        <input type="range" min="0" max="255" value="0" class="slider red" id="red">
+        <input type="range" min="0" max="255" value="0" class="slider green" id="gre">
+        <input type="range" min="0" max="255" value="0" class="slider blue" id="blu">
+      </div>
+      <a class="smallButton" href="#" onclick="setStrip(true); return false;">On</a>
+      &nbsp;
+      <a class="smallButton" href="#" onclick="setStrip(false); return false;">Off</a>
+      <div id="ledStatus"></div>
+
+    </div>
+
+
+    <div class="appBlade" id="Diagnostics">
+      (<a href="#" onclick="loadDiagnostics(); return false">Load/refresh diagnostics</a>)
+      <div id="diagnostics_results"></div>
+    </div>
+  </div>
+
+  <div id="response"><div class="lds-ring"><div></div><div></div><div></div><div></div></div></div>
+
+  <div id="footer">
+    <a href="/start">back to start</a>
+  </div>
+
+</body>
+
+</html>

@@ -52,7 +52,7 @@ As a general rule of thumb for WS2812B strips, we have a current of ~20 mA/LED. 
 
 This is a theoretical max for a full white image. The *lineMax* variable is defined as the cumulative brightness of the brightest line in a file, and that value is used to scale down the brightness of the image, so max current should be 3000mA or lower (recommended `CURRENT_MAX` value). As long as our power supply can deliver that and we use adecuate connectors (JST SM or XH are rated for 3A), we should be ok.
 
-Besides the controls in the sketch and given it's intended use, we shouldn't reach the maximum current your LED strip is able to draw. ** *However*, you should understand the limits and ensure precuations!** You are responsible for the safety of your implementation.
+Besides the controls in the sketch and given it's intended use, we shouldn't reach the maximum current your LED strip is able to draw. **_However_, you should understand the limits and ensure precuations!** You are responsible for the safety of your implementation.
 
 I found that the measured current was well bellow the theoretical current limit set in the sketch, there seems to be some overshoot, at least in my measurements. With a max of 3500mA I was reading around 980mA with a really bright image. Though it's possible that the max current is being reached for very short periods; I don't have the proper equipment to measure the current precisely (possibly an osciloscope would give a better picture if it depends on the duty cycle).
 
